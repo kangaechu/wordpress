@@ -25,5 +25,5 @@ default['wordpress']['repourl'] = "http://wordpress.org/"
 default['wordpress']['dir'] = "/var/www/wordpress"
 default['wordpress']['db']['database'] = "wordpressdb"
 default['wordpress']['db']['user'] = "wordpressuser"
-default['wordpress']['server_name'] = node['fqdn']
+default['wordpress']['server_name'] = node['domain']
 default['wordpress']['server_aliases'] = ["wordpress"]
