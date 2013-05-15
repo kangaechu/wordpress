@@ -43,6 +43,8 @@ node.set_unless['wordpress']['keys']['secure_auth'] = secure_password
 node.set_unless['wordpress']['keys']['logged_in'] = secure_password
 node.set_unless['wordpress']['keys']['nonce'] = secure_password
 
+apache_user = node['apache']['user'] ? node['apache']['user'] : "root"
+apache_group = node['apache']['group'] ? node['apache']['group'] : "root"
 
 if node['wordpress']['version'] == 'latest'
   # WordPress.org does not provide a sha256 checksum, so we'll use the sha1 they do provide
@@ -64,14 +66,16 @@ else
 end
 
 directory "#{node['wordpress']['dir']}" do
-  owner "root"
-  group "root"
+  owner apache_user
+  group apache_group
   mode "0755"
   action :create
   recursive true
 end
 
 execute "untar-wordpress" do
+  user apache_user
+  group apache_group
   cwd node['wordpress']['dir']
   command "tar --strip-components 1 -xzf #{Chef::Config[:file_cache_path]}/wordpress-#{node['wordpress']['version']}.tar.gz"
   creates "#{node['wordpress']['dir']}/wp-settings.php"
@@ -124,9 +128,9 @@ end
 
 template "#{node['wordpress']['dir']}/wp-config.php" do
   source "wp-config.php.erb"
-  owner "root"
-  group "root"
-  mode "0644"
+  owner apache_user
+  group apache_group
+  mode "444"
   variables(
     :database        => node['wordpress']['db']['database'],
     :user            => node['wordpress']['db']['user'],
