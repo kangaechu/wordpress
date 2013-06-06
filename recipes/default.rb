@@ -19,17 +19,10 @@
 
 include_recipe "apache2"
 include_recipe "mysql::server"
+include_recipe "mysql::ruby"
 include_recipe "php"
 include_recipe "php::module_mysql"
 include_recipe "apache2::mod_php5"
-
-# Make sure the mysql gem is installed. This looks like it will change with 
-# the release of 0.10.10 and the inclusion of the new chef_gem. 
-# code curtesy @hectcastro
-# http://tickets.opscode.com/browse/COOK-1009
-gem_package "mysql" do
-  action :install
-end
 
 if node.has_key?("ec2")
   server_fqdn = node['ec2']['public_hostname']
@@ -65,7 +58,7 @@ else
   end
 end
 
-directory "#{node['wordpress']['dir']}" do
+directory node['wordpress']['dir'] do
   owner apache_user
   group apache_group
   mode "0755"
@@ -122,8 +115,9 @@ unless Chef::Config[:solo]
   end
 end
 
-log "Navigate to 'http://#{server_fqdn}/wp-admin/install.php' to complete wordpress installation" do
+log "wordpress_install_message" do
   action :nothing
+  message "Navigate to 'http://#{server_fqdn}/wp-admin/install.php' to complete wordpress installation"
 end
 
 template "#{node['wordpress']['dir']}/wp-config.php" do
@@ -140,7 +134,7 @@ template "#{node['wordpress']['dir']}/wp-config.php" do
     :logged_in_key   => node['wordpress']['keys']['logged_in'],
     :nonce_key       => node['wordpress']['keys']['nonce']
   )
-  notifies :write, "log[Navigate to 'http://#{server_fqdn}/wp-admin/install.php' to complete wordpress installation]"
+  notifies :write, "log[wordpress_install_message]"
 end
 
 apache_site "000-default" do
@@ -149,7 +143,7 @@ end
 
 web_app "wordpress" do
   template "wordpress.conf.erb"
-  docroot "#{node['wordpress']['dir']}"
+  docroot node['wordpress']['dir']
   server_name node['wordpress']['server_name']
   server_aliases node['wordpress']['server_aliases']
 end
